@@ -21,6 +21,7 @@ test("detectAnomalies on real payroll data", () => {
   const rateChange = anomalies.filter((a) => a.type === "RATE_CHANGE");
   const levelChange = anomalies.filter((a) => a.type === "LEVEL_CHANGE");
   const excessiveHours = anomalies.filter((a) => a.type === "EXCESSIVE_HOURS");
+  const lowHours = anomalies.filter((a) => a.type === "LOW_HOURS");
 
   expect(nameMismatch.length).toBeGreaterThan(0);
   expect(rateChange.length).toBeGreaterThan(0);
@@ -35,4 +36,10 @@ test("detectAnomalies on real payroll data", () => {
 
   expect(excessiveHours.some((a) => a.description.includes("60"))).toBe(true);
   expect(excessiveHours.some((a) => a.description.includes("10-hour"))).toBe(true);
+
+  // LOW_HOURS: < 4 hours on weekday, or < 30 hours/week
+  expect(lowHours.length).toBeGreaterThan(0);
+  const hasWeekdayLow = lowHours.some((a) => a.description.includes("below 4-hour"));
+  const hasWeeklyLow = lowHours.some((a) => a.description.includes("30-hour"));
+  expect(hasWeekdayLow || hasWeeklyLow).toBe(true);
 });

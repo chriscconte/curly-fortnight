@@ -31,7 +31,11 @@ export type AnomalyType =
   | "NAME_ID_MISMATCH"
   | "RATE_CHANGE"
   | "LEVEL_CHANGE"
-  | "EXCESSIVE_HOURS";
+  | "EXCESSIVE_STANDARD_HOURS"
+  | "EXCESSIVE_DAILY_HOURS"
+  | "EXCESSIVE_WEEKLY_HOURS"
+  | "LOW_DAY_HOURS"
+  | "LOW_WEEKLY_HOURS";
 
 /** A single detected anomaly, linked to a payroll record. */
 export interface Anomaly {

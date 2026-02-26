@@ -7,7 +7,11 @@ const typeLabels: Record<AnomalyType, string> = {
   NAME_ID_MISMATCH: "Name/ID Mismatch",
   RATE_CHANGE: "Rate Change",
   LEVEL_CHANGE: "Level Change",
-  EXCESSIVE_HOURS: "Excessive Hours",
+  EXCESSIVE_STANDARD_HOURS: "Excessive Standard Hours",
+  EXCESSIVE_DAILY_HOURS: "Excessive Standard + Overtime Hours",
+  EXCESSIVE_WEEKLY_HOURS: "Excessive Weekly Hours",
+  LOW_DAY_HOURS: "Low Day Hours",
+  LOW_WEEKLY_HOURS: "Low Weekly Hours",
 };
 
 const PAGE_SIZE = 10;

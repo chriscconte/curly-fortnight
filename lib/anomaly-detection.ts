@@ -4,6 +4,8 @@ const RATE_CHANGE_THRESHOLD = 0.25; // 25%
 const EXCESSIVE_WEEKLY_HOURS = 60;
 const MAX_DAILY_HOURS = 8;
 const MAX_DAILY_HOURS_WITH_OVERTIME = 12;
+const MIN_WEEKDAY_HOURS = 4;
+const MIN_WEEKLY_HOURS = 30;
 
 const DAY_COLUMNS = [
   ["mon_st_hours", "mon_ot_hours"],
@@ -146,9 +148,9 @@ function detectExcessiveHours(records: PayrollRecord[]): Anomaly[] {
     const weeklyHours = getWeeklyHours(record);
     if (weeklyHours > EXCESSIVE_WEEKLY_HOURS) {
       anomalies.push({
-        type: "EXCESSIVE_HOURS",
+        type: "EXCESSIVE_WEEKLY_HOURS",
         record,
-        description: `Weekly hours (${weeklyHours.toFixed(1)}) exceed 60-hour threshold (week ${record.week_ending})`,
+        description: `Weekly hours (${weeklyHours.toFixed(1)}) exceed ${EXCESSIVE_WEEKLY_HOURS}-hour threshold`,
       });
     }
 
@@ -157,17 +159,52 @@ function detectExcessiveHours(records: PayrollRecord[]): Anomaly[] {
       const overtimeHours = getOvertimeHours(record, d);
       if (standardHours > MAX_DAILY_HOURS) {
         anomalies.push({
-          type: "EXCESSIVE_HOURS",
+          type: "EXCESSIVE_STANDARD_HOURS",
           record,
-          description: `${DAY_NAMES[d]} has ${standardHours.toFixed(1)} hours (exceeds 8-hour limit) - week ${record.week_ending}`,
-        });
+          description: `${DAY_NAMES[d]} has ${standardHours.toFixed(1)} hours (exceeds ${MAX_DAILY_HOURS}-hour limit)`,
+        }); 
       }
       const dailyHours = standardHours + overtimeHours;
       if (dailyHours > MAX_DAILY_HOURS_WITH_OVERTIME) {
         anomalies.push({
-          type: "EXCESSIVE_HOURS",
+          type: "EXCESSIVE_DAILY_HOURS",
           record,
-          description: `${DAY_NAMES[d]} has ${dailyHours.toFixed(1)} hours (exceeds 10-hour limit) - week ${record.week_ending}`,
+          description: `${DAY_NAMES[d]} has ${dailyHours.toFixed(1)} hours (exceeds ${MAX_DAILY_HOURS_WITH_OVERTIME}-hour limit)`,
+        });
+      }
+    }
+  }
+
+  return anomalies;
+}
+
+/** Get total hours for a single day (standard + overtime). */
+function getDailyHours(record: PayrollRecord, dayIndex: number): number {
+  return getStandardHours(record, dayIndex) + getOvertimeHours(record, dayIndex);
+}
+
+/** Detect low hours: < 4 hours on a weekday, or < 30 hours in a week. */
+function detectLowHours(records: PayrollRecord[]): Anomaly[] {
+  const anomalies: Anomaly[] = [];
+
+  for (const record of records) {
+    const weeklyHours = getWeeklyHours(record);
+    if (weeklyHours > 0 && weeklyHours < MIN_WEEKLY_HOURS) {
+      anomalies.push({
+        type: "LOW_HOURS",
+        record,
+        description: `Weekly hours (${weeklyHours.toFixed(1)}) below ${MIN_WEEKLY_HOURS}-hour threshold`,
+      });
+    }
+
+    // Weekdays are Mon–Fri (indices 0–4)
+    for (let d = 0; d < 5; d++) {
+      const dailyHours = getDailyHours(record, d);
+      if (dailyHours > 0 && dailyHours < MIN_WEEKDAY_HOURS) {
+        anomalies.push({
+          type: "LOW_HOURS",
+          record,
+          description: `${DAY_NAMES[d]} has ${dailyHours.toFixed(1)} hours (below ${MIN_WEEKDAY_HOURS}-hour minimum for weekday)`,
         });
       }
     }
@@ -209,6 +246,7 @@ export function detectAnomalies(records: PayrollRecord[]): Anomaly[] {
   results.push(...detectRateChange(records));
   results.push(...detectLevelChange(records));
   results.push(...detectExcessiveHours(records));
+  results.push(...detectLowHours(records));
 
   return results;
 }
