@@ -28,8 +28,13 @@ export function HoursByDayChart({ data }: Props) {
           />
           <XAxis dataKey="day" />
           <YAxis />
-          <Tooltip />
-          <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+          <Tooltip 
+            formatter={(value: number | undefined) => [
+              `${(value ?? 0).toFixed(1)} hrs`,
+              "Hours",
+            ]}
+          />
+          <Bar dataKey="hours" fill="#7dd3fc" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

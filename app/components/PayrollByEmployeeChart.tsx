@@ -37,8 +37,9 @@ export function PayrollByEmployeeChart({ data }: Props) {
                 maximumFractionDigits: 0,
               }).format(value ?? 0)
             }
+            contentStyle={{ backgroundColor: "#ffffff", color: "#000000" }}
           />
-          <Bar dataKey="payroll" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="payroll" fill="#7dd3fc" radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

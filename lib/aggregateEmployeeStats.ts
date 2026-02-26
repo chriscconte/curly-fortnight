@@ -12,6 +12,8 @@ function hoursForDay(r: PayrollRecord, day: DayKey): number {
 export interface EmployeeStats {
   employeeId: number;
   name: string;
+  occupation: string;
+  level: "APPRENTICE" | "JOURNEYWORKER";
   minHoursPerDay: number;
   maxHoursPerDay: number;
   avgHoursPerDay: number;
@@ -28,6 +30,8 @@ export interface EmployeeStats {
 
 interface EmployeeAccum {
   name: string;
+  occupation: string;
+  level: "APPRENTICE" | "JOURNEYWORKER";
   hoursPerDay: number[];
   standardRates: number[];
   overtimeRates: number[];
@@ -44,6 +48,8 @@ export function aggregateEmployeeStats(
     if (!acc) {
       acc = {
         name: r.employee_name,
+        occupation: r.occupation,
+        level: r.level,
         hoursPerDay: [],
         standardRates: [],
         overtimeRates: [],
@@ -74,6 +80,8 @@ export function aggregateEmployeeStats(
       return {
         employeeId,
         name: acc.name,
+        occupation: acc.occupation,
+        level: acc.level,
         minHoursPerDay: minNonZero(nonZeroHours),
         maxHoursPerDay: max(acc.hoursPerDay),
         avgHoursPerDay: avg(acc.hoursPerDay),

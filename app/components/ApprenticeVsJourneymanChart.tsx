@@ -13,7 +13,7 @@ interface Props {
   data: { name: string; value: number }[];
 }
 
-const COLORS = ["#3b82f6", "#22c55e"];
+const COLORS = ["#7dd3fc", "#fda4af"];
 
 export function ApprenticeVsJourneymanChart({ data }: Props) {
   return (

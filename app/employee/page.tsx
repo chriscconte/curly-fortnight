@@ -13,6 +13,31 @@ const currency = (n: number) =>
 
 const hours = (n: number) => n.toFixed(1);
 
+function formatLevel(level: "APPRENTICE" | "JOURNEYWORKER"): string {
+  return level === "JOURNEYWORKER" ? "Journeyman" : "Apprentice";
+}
+
+function TradeAndClassCell({
+  occupation,
+  level,
+}: {
+  occupation: string;
+  level: "APPRENTICE" | "JOURNEYWORKER";
+}) {
+  return (
+    <td className="px-4 py-3">
+      <div className="flex flex-col gap-1">
+        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+          {occupation}
+        </span>
+        <span className="inline-flex w-fit rounded-full bg-zinc-200 px-2.5 py-0.5 text-xs font-medium text-blue-600 dark:bg-zinc-700 dark:text-blue-400">
+          {formatLevel(level)}
+        </span>
+      </div>
+    </td>
+  );
+}
+
 function StatColumnHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -72,6 +97,10 @@ export default async function EmployeePage() {
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 Name
               </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <span className="block">Trade &</span>
+                <span className="block">Class</span>
+              </th>
               <StatColumnHeader title="Hours" subtitle="MIN/AVG/MAX" />
               <StatColumnHeader title="Standard Rate" subtitle="MIN/AVG/MAX" />
               <StatColumnHeader title="OT Rate" subtitle="MIN/AVG/MAX" />
@@ -90,6 +119,7 @@ export default async function EmployeePage() {
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
                   {e.name}
                 </td>
+                <TradeAndClassCell occupation={e.occupation} level={e.level} />
                 <HoursCell
                   min={e.minHoursPerDay}
                   avg={e.avgHoursPerDay}
