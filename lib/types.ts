@@ -25,3 +25,19 @@ export interface PayrollRecord {
   overtime_rate: number;
   benefits_rate: number;
 }
+
+/** Anomaly types detected in payroll data. */
+export type AnomalyType =
+  | "NAME_ID_MISMATCH"
+  | "RATE_CHANGE"
+  | "LEVEL_CHANGE"
+  | "EXCESSIVE_HOURS";
+
+/** A single detected anomaly, linked to a payroll record. */
+export interface Anomaly {
+  type: AnomalyType;
+  record: PayrollRecord;
+  description: string;
+  /** Optional: previous value for comparison (e.g. prior rate, prior level). */
+  previousValue?: string | number;
+}

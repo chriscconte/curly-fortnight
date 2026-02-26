@@ -83,7 +83,7 @@ export function parsePayrollCsv(csvText: string): PayrollRecord[] {
       }
     }
 
-    records.push(record as PayrollRecord);
+    records.push(record as unknown as PayrollRecord);
   }
 
   return records;

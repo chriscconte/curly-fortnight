@@ -1,2 +1,3 @@
 export { parsePayrollCsv } from "./parsePayrollCsv";
-export type { PayrollRecord } from "./types";
+export { detectAnomalies } from "./anomaly-detection";
+export type { PayrollRecord, Anomaly, AnomalyType } from "./types";
