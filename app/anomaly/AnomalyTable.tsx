@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import type { Anomaly, AnomalyType } from "@/lib/types";
 
 const typeLabels: Record<AnomalyType, string> = {
@@ -98,7 +99,12 @@ export function AnomalyTable({ anomalies }: AnomalyTableProps) {
                   {typeLabels[a.type]}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  {a.record.employee_name} ({a.record.employee_id})
+                  <Link
+                    href={`/employee/${a.record.employee_id}`}
+                    className="font-medium text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+                  >
+                    {a.record.employee_name} ({a.record.employee_id})
+                  </Link>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
                   {a.record.week_ending}

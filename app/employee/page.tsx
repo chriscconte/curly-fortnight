@@ -4,6 +4,8 @@ import Link from "next/link";
 import { parsePayrollCsv } from "@/lib/parsePayrollCsv";
 import { aggregateEmployeeStats } from "@/lib/aggregateEmployeeStats";
 
+const PAGE_SIZE = 10;
+
 const currency = (n: number) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -74,11 +76,114 @@ function CurrencyCell({ min, avg, max }: { min: number; avg: number; max: number
   );
 }
 
-export default async function EmployeePage() {
+function Pagination({
+  currentPage,
+  totalPages,
+  totalItems,
+  pageSize,
+}: {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+}) {
+  const start = (currentPage - 1) * pageSize + 1;
+  const end = Math.min(currentPage * pageSize, totalItems);
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Showing {start}–{end} of {totalItems} employees
+      </p>
+      <nav className="flex items-center gap-1" aria-label="Pagination">
+        <Link
+          href={currentPage > 1 ? `/employee?page=${currentPage - 1}` : "#"}
+          className={`inline-flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+            currentPage <= 1
+              ? "pointer-events-none text-zinc-400 dark:text-zinc-500"
+              : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          }`}
+          aria-disabled={currentPage <= 1}
+        >
+          Previous
+        </Link>
+        <span className="mx-2 flex items-center gap-1">
+          {(() => {
+            const maxVisible = 7;
+            const pages: (number | "ellipsis")[] = [];
+            if (totalPages <= maxVisible) {
+              for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+              const half = Math.floor(maxVisible / 2);
+              const start = Math.max(2, Math.min(currentPage - half, totalPages - maxVisible + 2));
+              const end = Math.min(totalPages - 1, start + maxVisible - 3);
+              pages.push(1);
+              if (start > 2) pages.push("ellipsis");
+              for (let i = start; i <= end; i++) pages.push(i);
+              if (end < totalPages - 1) pages.push("ellipsis");
+              if (totalPages > 1) pages.push(totalPages);
+            }
+            return pages.map((p, i) =>
+              p === "ellipsis" ? (
+                <span key={`ellipsis-${i}`} className="px-2 text-zinc-500">
+                  …
+                </span>
+              ) : p === currentPage ? (
+                <span
+                  key={p}
+                  className="inline-flex h-9 min-w-[2.25rem] items-center justify-center rounded-md bg-sky-600 px-3 text-sm font-medium text-white"
+                >
+                  {p}
+                </span>
+              ) : (
+                <Link
+                  key={p}
+                  href={`/employee?page=${p}`}
+                  className="inline-flex h-9 min-w-[2.25rem] items-center justify-center rounded-md px-3 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  {p}
+                </Link>
+              )
+            );
+          })()}
+        </span>
+        <Link
+          href={
+            currentPage < totalPages ? `/employee?page=${currentPage + 1}` : "#"
+          }
+          className={`inline-flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+            currentPage >= totalPages
+              ? "pointer-events-none text-zinc-400 dark:text-zinc-500"
+              : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          }`}
+          aria-disabled={currentPage >= totalPages}
+        >
+          Next
+        </Link>
+      </nav>
+    </div>
+  );
+}
+
+export default async function EmployeePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+
   const csvPath = path.join(process.cwd(), "public", "payroll_data.csv");
   const csvText = fs.readFileSync(csvPath, "utf-8");
   const records = parsePayrollCsv(csvText);
-  const employees = aggregateEmployeeStats(records);
+  const allEmployees = aggregateEmployeeStats(records);
+
+  const totalPages = Math.max(1, Math.ceil(allEmployees.length / PAGE_SIZE));
+  const page = Math.min(currentPage, totalPages);
+  const employees = allEmployees.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE
+  );
 
   return (
     <div className="p-8">
@@ -145,6 +250,12 @@ export default async function EmployeePage() {
           </tbody>
         </table>
       </div>
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={allEmployees.length}
+        pageSize={PAGE_SIZE}
+      />
     </div>
   );
 }
