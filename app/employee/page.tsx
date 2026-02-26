@@ -11,7 +11,42 @@ const currency = (n: number) =>
     maximumFractionDigits: 2,
   }).format(n);
 
-const hours = (n: number) => n.toFixed(2);
+const hours = (n: number) => n.toFixed(1);
+
+function StatColumnHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+      <div>{title}</div>
+      <div className="mt-0.5 text-[10px] font-normal opacity-80">({subtitle})</div>
+    </th>
+  );
+}
+
+function HoursCell({ min, avg, max }: { min: number; avg: number; max: number }) {
+  return (
+    <td className="px-4 py-3 text-center">
+      <div className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+        {hours(avg)}h avg
+      </div>
+      <div className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+        {hours(min)}h – {hours(max)}h
+      </div>
+    </td>
+  );
+}
+
+function CurrencyCell({ min, avg, max }: { min: number; avg: number; max: number }) {
+  return (
+    <td className="px-4 py-3 text-center">
+      <div className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+        {currency(avg)} avg
+      </div>
+      <div className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+        {currency(min)} – {currency(max)}
+      </div>
+    </td>
+  );
+}
 
 export default async function EmployeePage() {
   const csvPath = path.join(process.cwd(), "public", "payroll_data.csv");
@@ -37,42 +72,10 @@ export default async function EmployeePage() {
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 Name
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Min hrs/day (non-zero)
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Max hrs/day
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Avg hrs/day
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Min std rate
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Max std rate
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Avg std rate
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Min OT rate
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Max OT rate
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Avg OT rate
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Min benefits rate
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Max benefits rate
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Avg benefits rate
-              </th>
+              <StatColumnHeader title="Hours" subtitle="MIN/AVG/MAX" />
+              <StatColumnHeader title="Standard Rate" subtitle="MIN/AVG/MAX" />
+              <StatColumnHeader title="OT Rate" subtitle="MIN/AVG/MAX" />
+              <StatColumnHeader title="Benefits Rate" subtitle="MIN/AVG/MAX" />
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
@@ -87,42 +90,26 @@ export default async function EmployeePage() {
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
                   {e.name}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {hours(e.minHoursPerDay)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {hours(e.maxHoursPerDay)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {hours(e.avgHoursPerDay)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {currency(e.minStandardRate)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {currency(e.maxStandardRate)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {currency(e.avgStandardRate)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {currency(e.minOvertimeRate)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {currency(e.maxOvertimeRate)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {currency(e.avgOvertimeRate)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {currency(e.minBenefitsRate)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {currency(e.maxBenefitsRate)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums">
-                  {currency(e.avgBenefitsRate)}
-                </td>
+                <HoursCell
+                  min={e.minHoursPerDay}
+                  avg={e.avgHoursPerDay}
+                  max={e.maxHoursPerDay}
+                />
+                <CurrencyCell
+                  min={e.minStandardRate}
+                  avg={e.avgStandardRate}
+                  max={e.maxStandardRate}
+                />
+                <CurrencyCell
+                  min={e.minOvertimeRate}
+                  avg={e.avgOvertimeRate}
+                  max={e.maxOvertimeRate}
+                />
+                <CurrencyCell
+                  min={e.minBenefitsRate}
+                  avg={e.avgBenefitsRate}
+                  max={e.maxBenefitsRate}
+                />
               </tr>
             ))}
           </tbody>
