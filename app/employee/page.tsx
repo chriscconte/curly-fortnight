@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import Link from "next/link";
 import { parsePayrollCsv } from "@/lib/parsePayrollCsv";
 import { aggregateEmployeeStats } from "@/lib/aggregateEmployeeStats";
 
@@ -117,7 +118,12 @@ export default async function EmployeePage() {
                   {e.employeeId}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  {e.name}
+                  <Link
+                    href={`/employee/${e.employeeId}`}
+                    className="font-medium text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+                  >
+                    {e.name}
+                  </Link>
                 </td>
                 <TradeAndClassCell occupation={e.occupation} level={e.level} />
                 <HoursCell
