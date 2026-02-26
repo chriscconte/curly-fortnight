@@ -22,9 +22,16 @@ This page shows trends in payroll over time, apprentice percentage, and anomaly 
 
 This feature allows users to define custom anomaly rules. It is a work in progress, and the UI is not yet polished. The idea is to allow users to define their own anomaly rules, and to have a way to track and alert on them, without having to write code.
 
+
+**Demo**
+
+This is deployed on Vercel: https://curly-fortnight-nu.vercel.app/
+
+
 **Improvements**
 
-- Add a way to upload multiple CSV files
+- Add a way to upload one or multiple CSV files. I chose not to implement this because I simply ran out of time, and it didn't seem like the most interesting feature to build.
 - Add a persistent data store
-- Add a way to toggle between different data sets
-- Add a way to download the anomalies as a CSV
+- Add a way to download the anomalies as a CSV.
+- Add a way to better filter the anomalies.
+- Add a way to remove anomalies, and re calculate statistics. These anomalies could be a part of an issue-tracking system, where the issues are resolved, marked as false positives, assigned to the employee, etc.
