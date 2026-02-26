@@ -7,6 +7,7 @@ const typeLabels: Record<AnomalyType, string> = {
   NAME_ID_MISMATCH: "Name/ID Mismatch",
   RATE_CHANGE: "Rate Change",
   LEVEL_CHANGE: "Level Change",
+  OCCUPATION_CHANGE: "Occupation Change",
   EXCESSIVE_STANDARD_HOURS: "Excessive Standard Hours",
   EXCESSIVE_DAILY_HOURS: "Excessive Standard + Overtime Hours",
   EXCESSIVE_WEEKLY_HOURS: "Excessive Weekly Hours",

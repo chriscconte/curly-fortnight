@@ -140,6 +140,32 @@ function detectLevelChange(records: PayrollRecord[]): Anomaly[] {
   return anomalies;
 }
 
+/** Detect occupation change: employee switches to a different occupation. */
+function detectOccupationChange(records: PayrollRecord[]): Anomaly[] {
+  const anomalies: Anomaly[] = [];
+  const byEmployee = groupByEmployeeSortedByWeek(records);
+
+  for (const [, employeeRecords] of byEmployee) {
+    for (let i = 1; i < employeeRecords.length; i++) {
+      const prev = employeeRecords[i - 1];
+      const curr = employeeRecords[i];
+
+      const prevOcc = prev.occupation.trim();
+      const currOcc = curr.occupation.trim();
+      if (prevOcc !== currOcc) {
+        anomalies.push({
+          type: "OCCUPATION_CHANGE",
+          record: curr,
+          description: `Occupation changed from ${prevOcc} to ${currOcc} (week ${curr.week_ending})`,
+          previousValue: prevOcc,
+        });
+      }
+    }
+  }
+
+  return anomalies;
+}
+
 /** Detect excessive hours: 60+ week or 10+ hour days. */
 function detectExcessiveHours(records: PayrollRecord[]): Anomaly[] {
   const anomalies: Anomaly[] = [];
@@ -191,7 +217,7 @@ function detectLowHours(records: PayrollRecord[]): Anomaly[] {
     const weeklyHours = getWeeklyHours(record);
     if (weeklyHours > 0 && weeklyHours < MIN_WEEKLY_HOURS) {
       anomalies.push({
-        type: "LOW_HOURS",
+        type: "LOW_WEEKLY_HOURS",
         record,
         description: `Weekly hours (${weeklyHours.toFixed(1)}) below ${MIN_WEEKLY_HOURS}-hour threshold`,
       });
@@ -202,7 +228,7 @@ function detectLowHours(records: PayrollRecord[]): Anomaly[] {
       const dailyHours = getDailyHours(record, d);
       if (dailyHours > 0 && dailyHours < MIN_WEEKDAY_HOURS) {
         anomalies.push({
-          type: "LOW_HOURS",
+          type: "LOW_DAY_HOURS",
           record,
           description: `${DAY_NAMES[d]} has ${dailyHours.toFixed(1)} hours (below ${MIN_WEEKDAY_HOURS}-hour minimum for weekday)`,
         });
@@ -245,6 +271,7 @@ export function detectAnomalies(records: PayrollRecord[]): Anomaly[] {
   results.push(...detectNameIdMismatch(records));
   results.push(...detectRateChange(records));
   results.push(...detectLevelChange(records));
+  results.push(...detectOccupationChange(records));
   results.push(...detectExcessiveHours(records));
   results.push(...detectLowHours(records));
 
