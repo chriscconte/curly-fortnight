@@ -93,9 +93,6 @@ export default async function EmployeePage() {
           <thead>
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                ID
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 Name
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -114,9 +111,6 @@ export default async function EmployeePage() {
                 key={e.employeeId}
                 className="text-zinc-900 dark:text-zinc-50"
               >
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">
-                  {e.employeeId}
-                </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
                   <Link
                     href={`/employee/${e.employeeId}`}
