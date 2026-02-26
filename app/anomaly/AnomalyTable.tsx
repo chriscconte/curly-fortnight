@@ -14,7 +14,15 @@ const typeLabels: Record<AnomalyType, string> = {
   EXCESSIVE_WEEKLY_HOURS: "Excessive Weekly Hours",
   LOW_DAY_HOURS: "Low Day Hours",
   LOW_WEEKLY_HOURS: "Low Weekly Hours",
+  CUSTOM: "Custom",
 };
+
+function getTypeDisplayName(a: Anomaly): string {
+  if (a.type === "CUSTOM" && a.customTypeName) {
+    return a.customTypeName;
+  }
+  return typeLabels[a.type];
+}
 
 const PAGE_SIZE = 10;
 
@@ -23,12 +31,25 @@ interface AnomalyTableProps {
 }
 
 export function AnomalyTable({ anomalies }: AnomalyTableProps) {
-  const [typeFilter, setTypeFilter] = useState<AnomalyType | "">("");
+  const [typeFilter, setTypeFilter] = useState<string>("");
   const [page, setPage] = useState(0);
+
+  const customTypeNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const a of anomalies) {
+      if (a.type === "CUSTOM" && a.customTypeName) {
+        names.add(a.customTypeName);
+      }
+    }
+    return [...names].sort();
+  }, [anomalies]);
 
   const filtered = useMemo(() => {
     if (!typeFilter) return anomalies;
-    return anomalies.filter((a) => a.type === typeFilter);
+    if (typeLabels[typeFilter as AnomalyType]) {
+      return anomalies.filter((a) => a.type === typeFilter);
+    }
+    return anomalies.filter((a) => a.customTypeName === typeFilter);
   }, [anomalies, typeFilter]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
@@ -56,15 +77,22 @@ export function AnomalyTable({ anomalies }: AnomalyTableProps) {
           <select
             value={typeFilter}
             onChange={(e) => {
-              setTypeFilter(e.target.value as AnomalyType | "");
+              setTypeFilter(e.target.value);
               setPage(0);
             }}
             className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50"
           >
             <option value="">All</option>
-            {(Object.keys(typeLabels) as AnomalyType[]).map((t) => (
-              <option key={t} value={t}>
-                {typeLabels[t]}
+            {(Object.keys(typeLabels) as AnomalyType[])
+              .filter((t) => t !== "CUSTOM")
+              .map((t) => (
+                <option key={t} value={t}>
+                  {typeLabels[t]}
+                </option>
+              ))}
+            {customTypeNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
               </option>
             ))}
           </select>
@@ -96,7 +124,7 @@ export function AnomalyTable({ anomalies }: AnomalyTableProps) {
             {paginated.map((a, i) => (
               <tr key={currentPage * PAGE_SIZE + i} className="text-zinc-900 dark:text-zinc-50">
                 <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">
-                  {typeLabels[a.type]}
+                  {getTypeDisplayName(a)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
                   <Link

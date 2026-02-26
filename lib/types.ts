@@ -36,7 +36,28 @@ export type AnomalyType =
   | "EXCESSIVE_DAILY_HOURS"
   | "EXCESSIVE_WEEKLY_HOURS"
   | "LOW_DAY_HOURS"
-  | "LOW_WEEKLY_HOURS";
+  | "LOW_WEEKLY_HOURS"
+  | "CUSTOM";
+
+/** Rule definition variants for custom anomaly types. */
+export type AnomalyRule =
+  | {
+      kind: "single_record";
+      field: string;
+      operator: ">" | "<" | "=" | ">=" | "<=" | "!=";
+      value: number | string;
+    }
+  | { kind: "temporal_percent"; field: string; thresholdPercent: number }
+  | { kind: "temporal_any_change"; field: string }
+  | { kind: "cross_record"; type: "name_id_mismatch" };
+
+/** User-defined anomaly type. */
+export interface AnomalyDefinition {
+  id: string;
+  name: string;
+  rule: AnomalyRule;
+  enabled: boolean;
+}
 
 /** A single detected anomaly, linked to a payroll record. */
 export interface Anomaly {
@@ -45,4 +66,8 @@ export interface Anomaly {
   description: string;
   /** Optional: previous value for comparison (e.g. prior rate, prior level). */
   previousValue?: string | number;
+  /** For custom anomalies: ID of the definition that produced this anomaly. */
+  definitionId?: string;
+  /** For custom anomalies: display name of the definition. */
+  customTypeName?: string;
 }
