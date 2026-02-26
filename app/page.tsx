@@ -1,193 +1,21 @@
 import fs from "fs";
 import path from "path";
 import { parsePayrollCsv } from "@/lib/parsePayrollCsv";
-import type { PayrollRecord } from "@/lib/types";
+import { aggregatePayroll } from "@/lib/aggregatePayroll";
 import { HoursByDayChart } from "./components/HoursByDayChart";
 import { PayrollByEmployeeChart } from "./components/PayrollByEmployeeChart";
 import { ApprenticeVsJourneymanChart } from "./components/ApprenticeVsJourneymanChart";
-
-function sumHours(r: PayrollRecord): number {
-  const st =
-    r.mon_st_hours +
-    r.tue_st_hours +
-    r.wed_st_hours +
-    r.thu_st_hours +
-    r.fri_st_hours +
-    r.sat_st_hours +
-    r.sun_st_hours;
-  const ot =
-    r.mon_ot_hours +
-    r.tue_ot_hours +
-    r.wed_ot_hours +
-    r.thu_ot_hours +
-    r.fri_ot_hours +
-    r.sat_ot_hours +
-    r.sun_ot_hours;
-  return st + ot;
-}
-
-function parseWeekEnding(dateStr: string): Date {
-  const [m, d, y] = dateStr.split("/").map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function formatDateRange(min: Date, max: Date): string {
-  return `${min.toLocaleDateString("en-US")} – ${max.toLocaleDateString("en-US")}`;
-}
-
-function payrollForRecord(r: PayrollRecord): number {
-  const st =
-    r.mon_st_hours +
-    r.tue_st_hours +
-    r.wed_st_hours +
-    r.thu_st_hours +
-    r.fri_st_hours +
-    r.sat_st_hours +
-    r.sun_st_hours;
-  const ot =
-    r.mon_ot_hours +
-    r.tue_ot_hours +
-    r.wed_ot_hours +
-    r.thu_ot_hours +
-    r.fri_ot_hours +
-    r.sat_ot_hours +
-    r.sun_ot_hours;
-  const totalHours = st + ot;
-  return (
-    st * r.standard_rate +
-    ot * r.overtime_rate +
-    totalHours * r.benefits_rate
-  );
-}
 
 export default async function SummaryPage() {
   const csvPath = path.join(process.cwd(), "public", "payroll_data.csv");
   const csvText = fs.readFileSync(csvPath, "utf-8");
   const records = parsePayrollCsv(csvText);
-
-  const totalWorkforce = new Set(records.map((r) => r.employee_id)).size;
-  const cumulativePayroll = records.reduce(
-    (sum, r) => sum + payrollForRecord(r),
-    0
-  );
-  const ratesByEmployee = new Map<number, number>();
-  for (const r of records) {
-    if (!ratesByEmployee.has(r.employee_id)) {
-      ratesByEmployee.set(r.employee_id, r.standard_rate);
-    }
-  }
-  const avgHourlyRate =
-    ratesByEmployee.size > 0
-      ? [...ratesByEmployee.values()].reduce((a, b) => a + b, 0) /
-        ratesByEmployee.size
-      : 0;
-  const totalHours = records.reduce((sum, r) => sum + sumHours(r), 0);
-  const apprenticeHours = records
-    .filter((r) => r.level === "APPRENTICE")
-    .reduce((sum, r) => sum + sumHours(r), 0);
-  const apprenticeHoursPct =
-    totalHours > 0 ? (apprenticeHours / totalHours) * 100 : 0;
-  const journeymanHours = totalHours - apprenticeHours;
-
-  const hoursByDay = [
-    {
-      day: "Mon",
-      hours:
-        records.reduce(
-          (s, r) => s + r.mon_st_hours + r.mon_ot_hours,
-          0
-        ),
-    },
-    {
-      day: "Tue",
-      hours:
-        records.reduce(
-          (s, r) => s + r.tue_st_hours + r.tue_ot_hours,
-          0
-        ),
-    },
-    {
-      day: "Wed",
-      hours:
-        records.reduce(
-          (s, r) => s + r.wed_st_hours + r.wed_ot_hours,
-          0
-        ),
-    },
-    {
-      day: "Thu",
-      hours:
-        records.reduce(
-          (s, r) => s + r.thu_st_hours + r.thu_ot_hours,
-          0
-        ),
-    },
-    {
-      day: "Fri",
-      hours:
-        records.reduce(
-          (s, r) => s + r.fri_st_hours + r.fri_ot_hours,
-          0
-        ),
-    },
-    {
-      day: "Sat",
-      hours:
-        records.reduce(
-          (s, r) => s + r.sat_st_hours + r.sat_ot_hours,
-          0
-        ),
-    },
-    {
-      day: "Sun",
-      hours:
-        records.reduce(
-          (s, r) => s + r.sun_st_hours + r.sun_ot_hours,
-          0
-        ),
-    },
-  ];
-
-  const payrollByEmployeeMap = new Map<number, { name: string; payroll: number }>();
-  for (const r of records) {
-    const pay = payrollForRecord(r);
-    const existing = payrollByEmployeeMap.get(r.employee_id);
-    if (existing) {
-      existing.payroll += pay;
-    } else {
-      payrollByEmployeeMap.set(r.employee_id, {
-        name: r.employee_name,
-        payroll: pay,
-      });
-    }
-  }
-  const payrollByEmployee = [...payrollByEmployeeMap.values()]
-    .sort((a, b) => b.payroll - a.payroll)
-    .slice(0, 10);
-
-  const apprenticeVsJourneyman = [
-    { name: "Apprentice", value: apprenticeHours },
-    { name: "Journeyman", value: journeymanHours },
-  ];
-
-  const weekEndings = records.map((r) => parseWeekEnding(r.week_ending));
-  const dateRange =
-    weekEndings.length > 0
-      ? formatDateRange(
-          new Date(Math.min(...weekEndings.map((d) => d.getTime()))),
-          new Date(Math.max(...weekEndings.map((d) => d.getTime())))
-        )
-      : "—";
-
-  const benefitsAccrued = records.reduce(
-    (sum, r) => sum + r.benefits_rate * sumHours(r),
-    0
-  );
+  const summary = aggregatePayroll(records);
 
   const stats = [
     {
       label: "Total Workforce",
-      value: totalWorkforce.toLocaleString(),
+      value: summary.totalWorkforce.toLocaleString(),
     },
     {
       label: "Cumulative Payroll",
@@ -196,7 +24,7 @@ export default async function SummaryPage() {
         currency: "USD",
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
-      }).format(cumulativePayroll),
+      }).format(summary.cumulativePayroll),
     },
     {
       label: "Average Hourly Rates",
@@ -205,11 +33,11 @@ export default async function SummaryPage() {
         currency: "USD",
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      }).format(avgHourlyRate),
+      }).format(summary.avgHourlyRate),
     },
     {
       label: "Apprentice Hours %",
-      value: `${apprenticeHoursPct.toFixed(1)}%`,
+      value: `${summary.apprenticeHoursPct.toFixed(1)}%`,
     },
     {
       label: "Benefits Accrued",
@@ -218,7 +46,7 @@ export default async function SummaryPage() {
         currency: "USD",
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
-      }).format(benefitsAccrued),
+      }).format(summary.benefitsAccrued),
     },
   ];
 
@@ -231,7 +59,7 @@ export default async function SummaryPage() {
         Payroll overview from payroll data.
       </p>
       <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-500">
-        Date range: {dateRange}
+        Date range: {summary.dateRange}
       </p>
       <div className="mt-6 flex flex-wrap gap-4">
         {stats.map(({ label, value }) => (
@@ -249,11 +77,11 @@ export default async function SummaryPage() {
         ))}
       </div>
       <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <HoursByDayChart data={hoursByDay} />
-        <ApprenticeVsJourneymanChart data={apprenticeVsJourneyman} />
+        <HoursByDayChart data={summary.hoursByDay} />
+        <ApprenticeVsJourneymanChart data={summary.apprenticeVsJourneyman} />
       </div>
       <div className="mt-6">
-        <PayrollByEmployeeChart data={payrollByEmployee} />
+        <PayrollByEmployeeChart data={summary.payrollByEmployee} />
       </div>
     </div>
   );
