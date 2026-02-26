@@ -9,14 +9,6 @@ test("detectAnomalies on real payroll data", () => {
   const records = parsePayrollCsv(csv);
   const anomalies = detectAnomalies(records);
 
-  const byType = anomalies.reduce(
-    (acc, a) => {
-      acc[a.type] = (acc[a.type] ?? 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
-
   const nameMismatch = anomalies.filter((a) => a.type === "NAME_ID_MISMATCH");
   const rateChange = anomalies.filter((a) => a.type === "RATE_CHANGE");
   const levelChange = anomalies.filter((a) => a.type === "LEVEL_CHANGE");
