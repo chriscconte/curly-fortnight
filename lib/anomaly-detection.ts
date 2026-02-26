@@ -2,7 +2,8 @@ import type { Anomaly, PayrollRecord } from "./types";
 
 const RATE_CHANGE_THRESHOLD = 0.25; // 25%
 const EXCESSIVE_WEEKLY_HOURS = 60;
-const EXCESSIVE_DAILY_HOURS = 10;
+const MAX_DAILY_HOURS = 8;
+const MAX_DAILY_HOURS_WITH_OVERTIME = 12;
 
 const DAY_COLUMNS = [
   ["mon_st_hours", "mon_ot_hours"],
@@ -29,10 +30,16 @@ function getWeeklyHours(record: PayrollRecord): number {
   }, 0);
 }
 
-/** Get hours for a single day (st + ot). */
-function getDayHours(record: PayrollRecord, dayIndex: number): number {
-  const [st, ot] = DAY_COLUMNS[dayIndex];
-  return (record[st] ?? 0) + (record[ot] ?? 0);
+/** Get standard hours for a single day. */
+function getStandardHours(record: PayrollRecord, dayIndex: number): number {
+  const st = DAY_COLUMNS[dayIndex][0] as keyof PayrollRecord;
+  return record[st] as number ?? 0;
+}
+
+/** Get overtime hours for a single day. */
+function getOvertimeHours(record: PayrollRecord, dayIndex: number): number {
+  const ot = DAY_COLUMNS[dayIndex][1] as keyof PayrollRecord;
+  return record[ot] as number ?? 0;
 }
 
 /** Check if a rate changed more than 25% from previous. */
@@ -96,7 +103,7 @@ function detectRateChange(records: PayrollRecord[]): Anomaly[] {
           anomalies.push({
             type: "RATE_CHANGE",
             record: curr,
-            description: `${label} rate ${direction} from ${prevRate.toFixed(2)} to ${currRate.toFixed(2)} (week ${curr.week_ending})`,
+            description: `${label} rate ${direction} (${(100*currRate/prevRate).toFixed(0)}%) from \$${prevRate.toFixed(2)} to \$${currRate.toFixed(2)}`,
             previousValue: prevRate,
           });
         }
@@ -137,7 +144,7 @@ function detectExcessiveHours(records: PayrollRecord[]): Anomaly[] {
 
   for (const record of records) {
     const weeklyHours = getWeeklyHours(record);
-    if (weeklyHours >= EXCESSIVE_WEEKLY_HOURS) {
+    if (weeklyHours > EXCESSIVE_WEEKLY_HOURS) {
       anomalies.push({
         type: "EXCESSIVE_HOURS",
         record,
@@ -146,12 +153,21 @@ function detectExcessiveHours(records: PayrollRecord[]): Anomaly[] {
     }
 
     for (let d = 0; d < DAY_COLUMNS.length; d++) {
-      const dayHours = getDayHours(record, d);
-      if (dayHours >= EXCESSIVE_DAILY_HOURS) {
+      const standardHours = getStandardHours(record, d);
+      const overtimeHours = getOvertimeHours(record, d);
+      if (standardHours > MAX_DAILY_HOURS) {
         anomalies.push({
           type: "EXCESSIVE_HOURS",
           record,
-          description: `${DAY_NAMES[d]} has ${dayHours.toFixed(1)} hours (exceeds 10-hour limit) - week ${record.week_ending}`,
+          description: `${DAY_NAMES[d]} has ${standardHours.toFixed(1)} hours (exceeds 8-hour limit) - week ${record.week_ending}`,
+        });
+      }
+      const dailyHours = standardHours + overtimeHours;
+      if (dailyHours > MAX_DAILY_HOURS_WITH_OVERTIME) {
+        anomalies.push({
+          type: "EXCESSIVE_HOURS",
+          record,
+          description: `${DAY_NAMES[d]} has ${dailyHours.toFixed(1)} hours (exceeds 10-hour limit) - week ${record.week_ending}`,
         });
       }
     }
