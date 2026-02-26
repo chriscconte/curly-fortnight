@@ -2,6 +2,9 @@ import fs from "fs";
 import path from "path";
 import { parsePayrollCsv } from "@/lib/parsePayrollCsv";
 import type { PayrollRecord } from "@/lib/types";
+import { HoursByDayChart } from "./components/HoursByDayChart";
+import { PayrollByEmployeeChart } from "./components/PayrollByEmployeeChart";
+import { ApprenticeVsJourneymanChart } from "./components/ApprenticeVsJourneymanChart";
 
 function sumHours(r: PayrollRecord): number {
   const st =
@@ -21,6 +24,15 @@ function sumHours(r: PayrollRecord): number {
     r.sat_ot_hours +
     r.sun_ot_hours;
   return st + ot;
+}
+
+function parseWeekEnding(dateStr: string): Date {
+  const [m, d, y] = dateStr.split("/").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatDateRange(min: Date, max: Date): string {
+  return `${min.toLocaleDateString("en-US")} – ${max.toLocaleDateString("en-US")}`;
 }
 
 function payrollForRecord(r: PayrollRecord): number {
@@ -75,6 +87,102 @@ export default async function SummaryPage() {
     .reduce((sum, r) => sum + sumHours(r), 0);
   const apprenticeHoursPct =
     totalHours > 0 ? (apprenticeHours / totalHours) * 100 : 0;
+  const journeymanHours = totalHours - apprenticeHours;
+
+  const hoursByDay = [
+    {
+      day: "Mon",
+      hours:
+        records.reduce(
+          (s, r) => s + r.mon_st_hours + r.mon_ot_hours,
+          0
+        ),
+    },
+    {
+      day: "Tue",
+      hours:
+        records.reduce(
+          (s, r) => s + r.tue_st_hours + r.tue_ot_hours,
+          0
+        ),
+    },
+    {
+      day: "Wed",
+      hours:
+        records.reduce(
+          (s, r) => s + r.wed_st_hours + r.wed_ot_hours,
+          0
+        ),
+    },
+    {
+      day: "Thu",
+      hours:
+        records.reduce(
+          (s, r) => s + r.thu_st_hours + r.thu_ot_hours,
+          0
+        ),
+    },
+    {
+      day: "Fri",
+      hours:
+        records.reduce(
+          (s, r) => s + r.fri_st_hours + r.fri_ot_hours,
+          0
+        ),
+    },
+    {
+      day: "Sat",
+      hours:
+        records.reduce(
+          (s, r) => s + r.sat_st_hours + r.sat_ot_hours,
+          0
+        ),
+    },
+    {
+      day: "Sun",
+      hours:
+        records.reduce(
+          (s, r) => s + r.sun_st_hours + r.sun_ot_hours,
+          0
+        ),
+    },
+  ];
+
+  const payrollByEmployeeMap = new Map<number, { name: string; payroll: number }>();
+  for (const r of records) {
+    const pay = payrollForRecord(r);
+    const existing = payrollByEmployeeMap.get(r.employee_id);
+    if (existing) {
+      existing.payroll += pay;
+    } else {
+      payrollByEmployeeMap.set(r.employee_id, {
+        name: r.employee_name,
+        payroll: pay,
+      });
+    }
+  }
+  const payrollByEmployee = [...payrollByEmployeeMap.values()]
+    .sort((a, b) => b.payroll - a.payroll)
+    .slice(0, 10);
+
+  const apprenticeVsJourneyman = [
+    { name: "Apprentice", value: apprenticeHours },
+    { name: "Journeyman", value: journeymanHours },
+  ];
+
+  const weekEndings = records.map((r) => parseWeekEnding(r.week_ending));
+  const dateRange =
+    weekEndings.length > 0
+      ? formatDateRange(
+          new Date(Math.min(...weekEndings.map((d) => d.getTime()))),
+          new Date(Math.max(...weekEndings.map((d) => d.getTime())))
+        )
+      : "—";
+
+  const benefitsAccrued = records.reduce(
+    (sum, r) => sum + r.benefits_rate * sumHours(r),
+    0
+  );
 
   const stats = [
     {
@@ -103,6 +211,15 @@ export default async function SummaryPage() {
       label: "Apprentice Hours %",
       value: `${apprenticeHoursPct.toFixed(1)}%`,
     },
+    {
+      label: "Benefits Accrued",
+      value: new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(benefitsAccrued),
+    },
   ];
 
   return (
@@ -112,6 +229,9 @@ export default async function SummaryPage() {
       </h1>
       <p className="mt-2 text-zinc-600 dark:text-zinc-400">
         Payroll overview from payroll data.
+      </p>
+      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-500">
+        Date range: {dateRange}
       </p>
       <div className="mt-6 flex flex-wrap gap-4">
         {stats.map(({ label, value }) => (
@@ -127,6 +247,13 @@ export default async function SummaryPage() {
             </span>
           </div>
         ))}
+      </div>
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <HoursByDayChart data={hoursByDay} />
+        <ApprenticeVsJourneymanChart data={apprenticeVsJourneyman} />
+      </div>
+      <div className="mt-6">
+        <PayrollByEmployeeChart data={payrollByEmployee} />
       </div>
     </div>
   );
