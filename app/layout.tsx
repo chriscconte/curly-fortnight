@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Sidebar } from "./components/Sidebar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +28,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="flex min-h-screen flex-col">
+          <header className="border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
+            <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              Payroll Analytics
+            </h1>
+          </header>
+          <div className="flex flex-1">
+            <Sidebar />
+            <main className="flex-1">{children}</main>
+          </div>
+        </div>
       </body>
     </html>
   );
